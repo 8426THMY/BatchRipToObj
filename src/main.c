@@ -85,7 +85,7 @@ int main(int argc, char *argv[]){
 	struct dirent *dirFile;
 	unsigned int successCount = 0;
 	unsigned int failCount = 0;
-	/** Loop throuh all the files in the specified directory. **/
+	/** Loop through all the files in the specified directory. **/
 	while((dirFile = readdir(fileDir)) != NULL){
 		char fileName[1000] = "";
 		//Combine the file's directory and name to get the full path.
@@ -222,7 +222,7 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 		long unsigned int b;
 		//Add the vertex attribute types to our vector!
 		for(b = 0; b < numElements; b++){
-			vectorAdd(typeVector, (void *)readULong(file));
+			vectorAdd(typeVector, (void *)readULong(file), VOID);
 		}
 
 		//Vertex position data.
@@ -259,7 +259,7 @@ void getNames(vector *nameVector, long unsigned int totalNames, FILE *file){
 		char *curName = malloc(sizeof(char) * 1000);
 		readString(curName, file);
 
-		vectorAdd(nameVector, curName);
+		vectorAdd(nameVector, &curName, CHAR);
 	}
 }
 
@@ -271,7 +271,7 @@ void getFaces(vector *faceVector, long unsigned int totalFaces, FILE *file){
 		curVert[0] = readULong(file); curVert[1] = readULong(file); curVert[2] = readULong(file);
 
 		//Now add them to our vector!
-		vectorAdd(faceVector, (void *)curVert[0]); vectorAdd(faceVector, (void *)curVert[1]); vectorAdd(faceVector, (void *)curVert[2]);
+		vectorAdd(faceVector, &curVert[0], LONG); vectorAdd(faceVector, &curVert[1], LONG); vectorAdd(faceVector, &curVert[2], LONG);
 	}
 }
 
@@ -335,10 +335,9 @@ void getVertices(vector *posVector, vector *normVector, vector *uvVector, long u
 
 
 		//Add the vertex information to our respective vectors!
-		/** The problem is that I'm adding pointers to vertPos into the vector rather than the actual values. **/
-		vectorAdd(posVector, &vertPos[0]);   vectorAdd(posVector, &vertPos[1]);   vectorAdd(posVector, &vertPos[2]);
-		vectorAdd(normVector, &vertNorm[0]); vectorAdd(normVector, &vertNorm[1]); vectorAdd(normVector, &vertNorm[2]);
-		vectorAdd(uvVector, &vertUV[0]);     vectorAdd(uvVector, &vertUV[1]);
+		vectorAdd(posVector, &vertPos[0], FLOAT);   vectorAdd(posVector, &vertPos[1], FLOAT);   vectorAdd(posVector, &vertPos[2], FLOAT);
+		vectorAdd(normVector, &vertNorm[0], FLOAT); vectorAdd(normVector, &vertNorm[1], FLOAT); vectorAdd(normVector, &vertNorm[2], FLOAT);
+		vectorAdd(uvVector, &vertUV[0], FLOAT);     vectorAdd(uvVector, &vertUV[1], FLOAT);
 	}
 }
 
