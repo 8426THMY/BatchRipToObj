@@ -1,9 +1,17 @@
 #ifndef vector_h
 #define vector_h
 
-
 #include <stdlib.h>
 
+enum type {
+	VOID,
+	CHAR,
+	INT,
+	LONG,
+	FLOAT,
+	DOUBLE,
+	LONG_DOUBLE
+};
 
 typedef struct vector {
 	void **data;
@@ -11,15 +19,13 @@ typedef struct vector {
 	size_t size;
 } vector;
 
-
 void vectorInit(vector *vec);
 void vectorResize(vector *vec, size_t capacity);
-void vectorAdd(vector *vec, void *data);
+void vectorAdd(vector *vec, void *data, enum type dataType);
 void vectorRemove(vector *vec, unsigned int pos);
 void *vectorGet(vector *vec, unsigned int pos);
-void vectorSet(vector *vec, unsigned int pos, void *data);
+void vectorSet(vector *vec, unsigned int pos, void *data, enum type dataType);
 size_t vectorSize(vector *vec);
 void vectorClear(vector *vec);
-
 
 #endif
