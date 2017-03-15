@@ -21,10 +21,10 @@ typedef struct vector {
 
 void vectorInit(vector *vec);
 void vectorResize(vector *vec, size_t capacity);
-void vectorAdd(vector *vec, void *data, enum type dataType);
+void vectorAdd(vector *vec, void *data, enum type dataType, unsigned int length);
 void vectorRemove(vector *vec, unsigned int pos);
 void *vectorGet(vector *vec, unsigned int pos);
-void vectorSet(vector *vec, unsigned int pos, void *data, enum type dataType);
+void vectorSet(vector *vec, unsigned int pos, void *data, enum type dataType, unsigned int length);
 size_t vectorSize(vector *vec);
 void vectorClear(vector *vec);
 

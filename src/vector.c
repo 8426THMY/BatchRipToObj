@@ -9,7 +9,6 @@ void vectorInit(vector *vec){
 }
 
 void vectorResize(vector *vec, size_t capacity){
-	// Realloc causes problems in the Release build?
 	void **newData = realloc(vec->data, sizeof(void *) * capacity);
 
 	if(newData != NULL){
@@ -18,50 +17,52 @@ void vectorResize(vector *vec, size_t capacity){
 	}
 }
 
-void vectorAdd(vector *vec, void *data, enum type dataType){
+void vectorAdd(vector *vec, void *data, enum type dataType, unsigned int length){
 	if(vec->size == vec->capacity){
 		vectorResize(vec, vec->capacity * 2);
 	}
-	/*
-	** It would technically be faster to cast any integer (char, int, long) value
-	** directly to a void pointer when passing it into this function and use VOID
-	** as the dataType, but doing it this way keeps it consistent with floats.
-	*/
 	switch(dataType){
 		case CHAR:
-			((char *)(vec->data))[vec->size++] = *(char *)data;
+			vec->data[vec->size] = malloc(length * sizeof(char));
+			memcpy(vec->data[vec->size++], data, length * sizeof(char));
 		break;
 		case INT:
-			((int *)(vec->data))[vec->size++] = *(int *)data;
+			vec->data[vec->size] = malloc(length * sizeof(int));
+			memcpy(vec->data[vec->size++], data, length * sizeof(int));
 		break;
 		case LONG:
-			((long *)(vec->data))[vec->size++] = *(long *)data;
+			vec->data[vec->size] = malloc(length * sizeof(long));
+			memcpy(vec->data[vec->size++], data, length * sizeof(long));
 		break;
 		case FLOAT:
-			((float *)(vec->data))[vec->size++] = *(float *)data;
+			vec->data[vec->size] = malloc(length * sizeof(float));
+			memcpy(vec->data[vec->size++], data, length * sizeof(float));
 		break;
 		case DOUBLE:
-			((double *)(vec->data))[vec->size++] = *(double *)data;
+			vec->data[vec->size] = malloc(length * sizeof(double));
+			memcpy(vec->data[vec->size++], data, length * sizeof(double));
 		break;
 		case LONG_DOUBLE:
-			((long double *)(vec->data))[vec->size++] = *(long double *)data;
+			vec->data[vec->size] = malloc(length * sizeof(long double));
+			memcpy(vec->data[vec->size++], data, length * sizeof(long double));
 		break;
 		default:
-			vec->data[vec->size++] = data;
+			vec->data[vec->size] = malloc(length * sizeof(void*));
+			memcpy(vec->data[vec->size++], data, length * sizeof(void*));
 		break;
 	}
 }
 
 void vectorRemove(vector *vec, unsigned int pos){
 	if(pos < vec->size){
-		vec->data[pos] = NULL;
+		free(vec->data[pos]);
 
 		unsigned int i = 0;
 		for(i = pos; i < vec->size - 1; i++){
 			vec->data[i] = vec->data[i + 1];
 		}
 
-		vec->data[--vec->size] = NULL;
+		free(vec->data[--vec->size]);
 
 		if(vec->size > 0 && vec->size == vec->capacity / 4){
 			vectorResize(vec, vec->capacity / 2);
@@ -71,40 +72,49 @@ void vectorRemove(vector *vec, unsigned int pos){
 
 void *vectorGet(vector *vec, unsigned int pos){
 	if(pos < vec->size){
-		return(&vec->data[pos]);
+		return(vec->data[pos]);
 	}
 
 	return(NULL);
 }
 
-void vectorSet(vector *vec, unsigned int pos, void *data, enum type dataType){
+void vectorSet(vector *vec, unsigned int pos, void *data, enum type dataType, unsigned int length){
 	if(pos < vec->size){
-		/*
-		** It would technically be faster to cast any integer (char, int, long) value
-		** directly to a void pointer when passing it into this function and use VOID
-		** as the dataType, but doing it this way keeps it consistent with floats.
-		*/
 		switch(dataType){
 			case CHAR:
-				((char *)(vec->data))[pos] = *(char *)data;
+				free(vec->data[pos]);
+				vec->data[pos] = malloc(length * sizeof(char));
+				memcpy(vec->data[pos], data, length * sizeof(char));
 			break;
 			case INT:
-				((int *)(vec->data))[pos] = *(int *)data;
+				free(vec->data[pos]);
+				vec->data[pos] = malloc(length * sizeof(int));
+				memcpy(vec->data[pos], data, length * sizeof(int));
 			break;
 			case LONG:
-				((long *)(vec->data))[pos] = *(long *)data;
+				free(vec->data[pos]);
+				vec->data[pos] = malloc(length * sizeof(long));
+				memcpy(vec->data[pos], data, length * sizeof(long));
 			break;
 			case FLOAT:
-				((float *)(vec->data))[pos] = *(float *)data;
+				free(vec->data[pos]);
+				vec->data[pos] = malloc(length * sizeof(float));
+				memcpy(vec->data[pos], (float *)data, length * sizeof(float));
 			break;
 			case DOUBLE:
-				((double *)(vec->data))[pos] = *(double *)data;
+				free(vec->data[pos]);
+				vec->data[pos] = malloc(length * sizeof(double));
+				memcpy(vec->data[pos], (double *)data, length * sizeof(double));
 			break;
 			case LONG_DOUBLE:
-				((long double *)(vec->data))[pos] = *(long double *)data;
+				free(vec->data[pos]);
+				vec->data[pos] = malloc(length * sizeof(long double));
+				memcpy(vec->data[pos], (long double *)data, length * sizeof(long double));
 			break;
 			default:
-				vec->data[pos] = data;
+				free(vec->data[pos]);
+				vec->data[pos] = malloc(length * sizeof(void*));
+				memcpy(vec->data[pos], data, length * sizeof(void*));
 			break;
 		}
 	}
@@ -115,5 +125,9 @@ size_t vectorSize(vector *vec){
 }
 
 void vectorClear(vector *vec){
+	unsigned int i;
+	for(i = 0; i < vec->size; i++){
+		free(vec->data[i]);
+	}
 	free(vec->data);
 }
