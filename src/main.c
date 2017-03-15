@@ -205,28 +205,30 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 	char gotEmPos  = 0;
 	char gotEmNorm = 0;
 	char gotEmUV   = 0;
+	char curAttrib[1000];
 
 
 	long unsigned int a;
 	/** Loop through the vertex attribute information! **/
 	for(a = 0; a < numAttribs; a++){
-		char *curAttrib = malloc(sizeof(char) * 1000);
-		readString(curAttrib, file);
+		readString(&curAttrib[0], file);
 
-		long unsigned int attribIndex  = readULong(file); //Currently unused.
+		readULong(file); // Skip attribute index as it is currently unused
 		long unsigned int attribOffset = readULong(file);
-		long unsigned int attribSize   = readULong(file); //Currently unused.
+		readULong(file); // Skip attribute size as it is currently unused
 		long unsigned int numElements  = readULong(file);
 
 
+		unsigned long val;
 		long unsigned int b;
 		//Add the vertex attribute types to our vector!
 		for(b = 0; b < numElements; b++){
-			vectorAdd(typeVector, (void *)readULong(file), VOID);
+			val = readULong(file);
+			vectorAdd(typeVector, &val, LONG, 1);
 		}
 
 		//Vertex position data.
-		if(strcmp(curAttrib, "POSITION") == 0 && gotEmPos == 0){
+		if(strcmp(&curAttrib[0], "POSITION") == 0 && gotEmPos == 0){
 			posIndex[0] = attribOffset / 4;
 			posIndex[1] = posIndex[0] + 1;
 			posIndex[2] = posIndex[0] + 2;
@@ -234,7 +236,7 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 			gotEmPos = 1;
 
 		//Vertex normal data.
-		}else if(strcmp(curAttrib, "NORMAL") == 0 && gotEmNorm == 0){
+		}else if(strcmp(&curAttrib[0], "NORMAL") == 0 && gotEmNorm == 0){
 			normIndex[0] = attribOffset / 4;
 			normIndex[1] = normIndex[0] + 1;
 			normIndex[2] = normIndex[0] + 2;
@@ -242,7 +244,7 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 			gotEmNorm = 1;
 
 		//Vertex UV data.
-		}else if(strcmp(curAttrib, "TEXCOORD") == 0 && gotEmUV == 0){
+		}else if(strcmp(&curAttrib[0], "TEXCOORD") == 0 && gotEmUV == 0){
 			uvIndex[0] = attribOffset / 4;
 			uvIndex[1] = uvIndex[0] + 1;
 			uvIndex[2] = uvIndex[0] + 2;
@@ -253,13 +255,15 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 }
 
 void getNames(vector *nameVector, long unsigned int totalNames, FILE *file){
+	char tempName[1000];
 	long unsigned int i;
 	//Push the names into our vector!
 	for(i = 0; i < totalNames; i++){
-		char *curName = malloc(sizeof(char) * 1000);
-		readString(curName, file);
+		readString(&tempName[0], file);
+		char *curName = malloc(sizeof(char) * strlen(tempName));
+		strcpy(curName, tempName);
 
-		vectorAdd(nameVector, &curName, CHAR);
+		vectorAdd(nameVector, &tempName, CHAR, strlen(tempName));
 	}
 }
 
@@ -271,7 +275,7 @@ void getFaces(vector *faceVector, long unsigned int totalFaces, FILE *file){
 		curVert[0] = readULong(file); curVert[1] = readULong(file); curVert[2] = readULong(file);
 
 		//Now add them to our vector!
-		vectorAdd(faceVector, &curVert[0], LONG); vectorAdd(faceVector, &curVert[1], LONG); vectorAdd(faceVector, &curVert[2], LONG);
+		vectorAdd(faceVector, &curVert[0], LONG, 1); vectorAdd(faceVector, &curVert[1], LONG, 1); vectorAdd(faceVector, &curVert[2], LONG, 1);
 	}
 }
 
@@ -294,7 +298,7 @@ void getVertices(vector *posVector, vector *normVector, vector *uvVector, long u
 				1 = long unsigned int
 				2 = long signed int
 			*/
-			switch((long unsigned int)vectorGet(attribTypes, b)){
+			switch(*(long unsigned int *)vectorGet(attribTypes, b)){
 				case 0:
 					curVal = readFloat(file);
 				break;
@@ -335,9 +339,9 @@ void getVertices(vector *posVector, vector *normVector, vector *uvVector, long u
 
 
 		//Add the vertex information to our respective vectors!
-		vectorAdd(posVector, &vertPos[0], FLOAT);   vectorAdd(posVector, &vertPos[1], FLOAT);   vectorAdd(posVector, &vertPos[2], FLOAT);
-		vectorAdd(normVector, &vertNorm[0], FLOAT); vectorAdd(normVector, &vertNorm[1], FLOAT); vectorAdd(normVector, &vertNorm[2], FLOAT);
-		vectorAdd(uvVector, &vertUV[0], FLOAT);     vectorAdd(uvVector, &vertUV[1], FLOAT);
+		vectorAdd(posVector, &vertPos[0], FLOAT, 1);   vectorAdd(posVector, &vertPos[1], FLOAT, 1);   vectorAdd(posVector, &vertPos[2], FLOAT, 1);
+		vectorAdd(normVector, &vertNorm[0], FLOAT, 1); vectorAdd(normVector, &vertNorm[1], FLOAT, 1); vectorAdd(normVector, &vertNorm[2], FLOAT, 1);
+		vectorAdd(uvVector, &vertUV[0], FLOAT, 1);     vectorAdd(uvVector, &vertUV[1], FLOAT, 1);
 	}
 }
 
@@ -415,15 +419,15 @@ void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector 
 		long unsigned int b;
 		for(b = 0; b < 3; b++){
 			//Write the position's indices to the file!
-			fprintf(objFile, " %ld/", (long unsigned int)vectorGet(faceVector, a * 3 + b) + 1);
+			fprintf(objFile, " %ld/", *(long unsigned int *)vectorGet(faceVector, a * 3 + b) + 1);
 
 			//If we're not ignoring UVs, write their indices to the file!
 			if(!objFlags[0]){
-				fprintf(objFile, "%ld", (long unsigned int)vectorGet(faceVector, a * 3 + b) + 1);
+				fprintf(objFile, "%ld", *(long unsigned int *)vectorGet(faceVector, a * 3 + b) + 1);
 			}
 			//If we're not ignoring normals, write their indices to the file!
 			if(!objFlags[1]){
-				fprintf(objFile, "/%ld", (long unsigned int)vectorGet(faceVector, a * 3 + b) + 1);
+				fprintf(objFile, "/%ld", *(long unsigned int *)vectorGet(faceVector, a * 3 + b) + 1);
 			}
 		}
 
@@ -450,7 +454,7 @@ unsigned short convertRIP(FILE *oldFile, char *objFlags, char *outputPath, char 
 	//...right?
 	long unsigned int totalFaces    = readULong(oldFile);
     long unsigned int totalVerts    = readULong(oldFile);
-    long unsigned int vertSize      = readULong(oldFile); //Currently unused.
+    readULong(oldFile); // Skip vertex size as it is currently unused.
     long unsigned int totalTextures = readULong(oldFile);
     long unsigned int totalShaders  = readULong(oldFile);
     long unsigned int totalAttribs  = readULong(oldFile);
