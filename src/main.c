@@ -135,33 +135,33 @@ int main(int argc, char *argv[]){
 
 
 long signed int readLong(FILE *file){
-	unsigned char buffer[4];
+	long signed int returnVal;
 
-	//Read four bytes from the file.
-	fread(buffer, sizeof(char) * 4, 1, file);
+	//Read four bytes from the file as a little-endian signed long.
+	fread((void *)&returnVal, sizeof(long signed int), 1, file);
 
-	//'.rip' data is mostly little-endian, so we need to reverse it.
-	return((long signed int)(buffer[3] << 24 | buffer[2] << 16 | buffer[1] << 8 | buffer[0]));
+	//Now return the value!
+	return(returnVal);
 }
 
 long unsigned int readULong(FILE *file){
-	unsigned char buffer[4];
+	long unsigned int returnVal;
 
-	//Read four bytes from the file.
-	fread(buffer, sizeof(char) * 4, 1, file);
+	//Read four bytes from the file as a little-endian unsigned long.
+	fread((void *)&returnVal, sizeof(long unsigned int), 1, file);
 
-	//'.rip' data is mostly little-endian, so we need to reverse it.
-	return((long unsigned int)(buffer[3] << 24 | buffer[2] << 16 | buffer[1] << 8 | buffer[0]));
+	//Now return the value!
+	return(returnVal);
 }
 
 float readFloat(FILE *file){
-	unsigned char buffer[4];
+	float returnVal;
 
-	//Read four bytes from the file.
-	fread(buffer, sizeof(char) * 4, 1, file);
+	//Read four bytes from the file as a little-endian float.
+	fread((void *)&returnVal, sizeof(float), 1, file);
 
-	//'.rip' data is mostly little-endian, so we need to reverse it.
-	return((float)(buffer[3] << 24 | buffer[2] << 16 | buffer[1] << 8 | buffer[0]));
+	//Now return the value!
+	return(returnVal);
 }
 
 void readString(char *stringBuffer, FILE *file){
