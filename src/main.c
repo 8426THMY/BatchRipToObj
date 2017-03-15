@@ -247,7 +247,6 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 		}else if(strcmp(&curAttrib[0], "TEXCOORD") == 0 && gotEmUV == 0){
 			uvIndex[0] = attribOffset / 4;
 			uvIndex[1] = uvIndex[0] + 1;
-			uvIndex[2] = uvIndex[0] + 2;
 
 			gotEmUV = 1;
 		}
@@ -333,7 +332,7 @@ void getVertices(vector *posVector, vector *normVector, vector *uvVector, long u
 			}else if(b == uvIndex[0]){
 				vertUV[0] = curVal;
 			}else if(b == uvIndex[1]){
-				vertUV[1] = curVal;
+				vertUV[1] = 1.f - curVal;
 			}
 		}
 
