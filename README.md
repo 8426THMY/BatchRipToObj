@@ -1,4 +1,4 @@
-#Batch RIP to OBJ Converter
+# Batch RIP to OBJ Converter
 To use this program, create a batch file in the same directory as it with the following contents:
 ```
 BatchRipToObj -i "inputDir" -o "outputDir"
