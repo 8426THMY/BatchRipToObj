@@ -8,7 +8,7 @@
 
 
 //Forward declare the function so we can have main at the top!
-unsigned short convertRIP(FILE *oldFile, char *objFlags, char *outputPath, char *fileName);
+unsigned short convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, char *fileName);
 
 
 int main(int argc, char *argv[]){
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]){
 
 
 			printf("Currently converting \"%s\"...\n", fileName);
-			if(convertRIP(oldFile, &objFlags[0], &outputPath[0], &newName[0])){
+			if(convertRIP(oldFile, &objFlags, &outputPath[0], &newName[0])){
 				printf("Conversion successful.\n\n");
 
 				successCount++;
@@ -345,7 +345,7 @@ void getVertices(vector *posVector, vector *normVector, vector *uvVector, long u
 }
 
 
-void writeMtl(vector *textureNames, char *objFlags, char *outputPath, char *fileName){
+void writeMtl(vector *textureNames, char *outputPath, char *fileName){
 	char mtlName[1000];
 	strcpy(mtlName, outputPath);
 	strcat(mtlName, fileName);
@@ -369,7 +369,7 @@ void writeMtl(vector *textureNames, char *objFlags, char *outputPath, char *file
 	fclose(mtlFile);
 }
 
-void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector *uvVector, vector *textureNames, char *objFlags, char *outputPath, char *fileName){
+void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector *uvVector, vector *textureNames, char (*objFlags)[2], char *outputPath, char *fileName){
 	char objName[1000];
 	strcpy(objName, outputPath);
 	strcat(objName, fileName);
@@ -379,10 +379,10 @@ void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector 
 
 	/** Write '.mtl' File **/
 	//If we're not ignoring UVs and the model uses atleast one texture, create a '.mtl' file!
-	if(vectorSize(textureNames) > 0 && !objFlags[0]){
+	if(vectorSize(textureNames) > 0 && !(*objFlags)[0]){
 		fprintf(objFile, "mtllib %smtl\r\n", fileName);
 
-		writeMtl(textureNames, objFlags, outputPath, fileName);
+		writeMtl(textureNames, outputPath, fileName);
 
 		//We only use the first texture... for now!
 		fprintf(objFile, "usemtl %s\r\n", (char *)vectorGet(textureNames, 0));
@@ -397,14 +397,14 @@ void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector 
 	}
 
 	//Write the vertex UV coordinates to the file if we're not ignoring them!
-	if(!objFlags[0]){
+	if(!(*objFlags)[0]){
 		for(a = 0; a < vectorSize(uvVector) / 2; a++){
 			fprintf(objFile, "vt %f %f\r\n", *(float *)vectorGet(uvVector, a * 2), *(float *)vectorGet(uvVector, a * 2 + 1));
 		}
 	}
 
 	//Write the vertex normals to the file if we're not ignoring them!
-	if(!objFlags[1]){
+	if(!(*objFlags)[1]){
 		for(a = 0; a < vectorSize(normVector) / 3; a++){
 			fprintf(objFile, "vn %f %f %f\r\n", *(float *)vectorGet(normVector, a * 3), *(float *)vectorGet(normVector, a * 3 + 1), *(float *)vectorGet(normVector, a * 3 + 2));
 		}
@@ -421,11 +421,11 @@ void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector 
 			fprintf(objFile, " %ld/", *(long unsigned int *)vectorGet(faceVector, a * 3 + b) + 1);
 
 			//If we're not ignoring UVs, write their indices to the file!
-			if(!objFlags[0]){
+			if(!(*objFlags)[0]){
 				fprintf(objFile, "%ld", *(long unsigned int *)vectorGet(faceVector, a * 3 + b) + 1);
 			}
 			//If we're not ignoring normals, write their indices to the file!
-			if(!objFlags[1]){
+			if(!(*objFlags)[1]){
 				fprintf(objFile, "/%ld", *(long unsigned int *)vectorGet(faceVector, a * 3 + b) + 1);
 			}
 		}
@@ -442,7 +442,7 @@ void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector 
 
 
 //Now we declare this function!
-unsigned short convertRIP(FILE *oldFile, char *objFlags, char *outputPath, char *fileName){
+unsigned short convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, char *fileName){
 	/** Make sure the file's signature and version number match! **/
 	if(!checkSignature(oldFile) || !checkVersion(oldFile)){
 		return(0);
