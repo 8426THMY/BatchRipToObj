@@ -7,13 +7,21 @@
 #include "vector.h"
 
 
+#ifdef _WIN32
+	#define MAX_PATH_SIZE (_MAX_PATH + 1)
+#else
+	#include <limits.h>
+	#define MAX_PATH_SIZE (PATH_MAX + 1)
+#endif
+
+
 //Forward declare the function so we can have main at the top!
 unsigned short convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, char *fileName);
 
 
 int main(int argc, char *argv[]){
-	char inputPath[1000] = "";
-	char outputPath[1000] = "";
+	char inputPath[MAX_PATH_SIZE] = "";
+	char outputPath[MAX_PATH_SIZE] = "";
 
 	/*
 		objFlags[0] = Should we ignore UVs?
@@ -60,7 +68,7 @@ int main(int argc, char *argv[]){
 
 
 	DIR *fileDir;
-	/** If the directory couldn't be opened, abort the program! **/
+	/** If the directory couldn't be opened, use the program's directory! **/
 	if((fileDir = opendir(inputPath)) == NULL || errno == ENOENT){
 		if(inputPath[0] == '\0'){
 			printf("Input directory not specified, using the program's directory...\n\n");
@@ -68,7 +76,7 @@ int main(int argc, char *argv[]){
 			printf("The specified directory could not be opened, using the program's directory...\n\n");
 		}
 
-		strncpy(inputPath, ".\\", 1000);
+		strncpy(inputPath, ".\\", MAX_PATH_SIZE);
 		fileDir = opendir(inputPath);
 	}
 	/** If an output path wasn't specified, set it to a folder called "out" within the inputPath. **/
@@ -87,7 +95,7 @@ int main(int argc, char *argv[]){
 	unsigned int failCount = 0;
 	/** Loop through all the files in the specified directory. **/
 	while((dirFile = readdir(fileDir)) != NULL){
-		char fileName[1000] = "";
+		char fileName[MAX_PATH_SIZE] = "";
 		//Combine the file's directory and name to get the full path.
 		strcpy(fileName, inputPath);
 		strcat(fileName, dirFile->d_name);
@@ -98,7 +106,7 @@ int main(int argc, char *argv[]){
 		/** Open the file and convert it if the extension is ".rip"! **/
 		if(fileExtension != NULL && strcmp(fileExtension, ".rip") == 0 && (oldFile = fopen(fileName, "rb")) != NULL){
 			//The new file's name should be the output path plus the original file name!
-			char newName[1000] = "";
+			char newName[MAX_PATH_SIZE] = "";
 			strncpy(newName, dirFile->d_name, strlen(dirFile->d_name) - 3);
 
 
@@ -129,6 +137,9 @@ int main(int argc, char *argv[]){
 		printf("\nFailed to convert %d files.", failCount);
 	}
 
+
+	printf("\n\nPress enter to exit.\n");
+	getc(stdin);
 
 	return(1);
 }
@@ -171,6 +182,8 @@ void readString(char *stringBuffer, FILE *file){
 	fgets(stringBuffer, 1000, file);
 	//Set the file pointer to the position after the null terminator we just reached!
 	fseek(file, curPos + strlen(stringBuffer) + 1, SEEK_SET);
+	//Make sure the last character is a null terminator just in case!
+	stringBuffer[strlen(stringBuffer) + 1] = '\0';
 }
 
 
@@ -254,15 +267,15 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 }
 
 void getNames(vector *nameVector, long unsigned int totalNames, FILE *file){
-	char tempName[1000];
+	char tempName[MAX_PATH_SIZE];
 	long unsigned int i;
 	//Push the names into our vector!
 	for(i = 0; i < totalNames; i++){
 		readString(&tempName[0], file);
-		char *curName = malloc(sizeof(char) * strlen(tempName));
-		strcpy(curName, tempName);
+		char *curName = malloc(sizeof(char) * (strlen(tempName) + 1));
+		strncpy(curName, tempName, strlen(tempName) + 1);
 
-		vectorAdd(nameVector, &tempName, CHAR, strlen(tempName));
+		vectorAdd(nameVector, &tempName, CHAR, strlen(tempName) + 1);
 	}
 }
 
@@ -346,10 +359,10 @@ void getVertices(vector *posVector, vector *normVector, vector *uvVector, long u
 
 
 void writeMtl(vector *textureNames, char *outputPath, char *fileName){
-	char mtlName[1000];
-	strcpy(mtlName, outputPath);
-	strcat(mtlName, fileName);
-	strcat(mtlName, "mtl\0");
+	char mtlName[MAX_PATH_SIZE];
+	strncpy(mtlName, outputPath, strlen(outputPath) + 1);
+	strncat(mtlName, fileName, strlen(fileName) + 1);
+	strncat(mtlName, "mtl\0", 4);
 	FILE *mtlFile = fopen(mtlName, "wb");
 
 
@@ -370,10 +383,10 @@ void writeMtl(vector *textureNames, char *outputPath, char *fileName){
 }
 
 void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector *uvVector, vector *textureNames, char (*objFlags)[2], char *outputPath, char *fileName){
-	char objName[1000];
-	strcpy(objName, outputPath);
-	strcat(objName, fileName);
-	strcat(objName, "obj\0");
+	char objName[MAX_PATH_SIZE];
+	strncpy(objName, outputPath, strlen(outputPath) + 1);
+	strncat(objName, fileName, strlen(fileName) + 1);
+	strncat(objName, "obj\0", 4);
 	FILE *objFile = fopen(objName, "wb");
 
 

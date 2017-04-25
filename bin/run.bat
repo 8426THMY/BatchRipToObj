@@ -1,3 +1,1 @@
-BatchRipToObj -i "." -o "out"
-
-PAUSE
+BatchRipToObj.exe -i "." -o "out"
