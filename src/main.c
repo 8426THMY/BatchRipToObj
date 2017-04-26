@@ -37,10 +37,10 @@ int main(int argc, char *argv[]){
 		if(strcmp(argv[i], "-i") == 0){
 			i++;
 			if(i < argc){
-				strcpy(inputPath, argv[i]);
+				strncpy(inputPath, argv[i], strlen(argv[i]));
 				//If it doesn't end in a backslash or forwardslash, add one!
 				if(inputPath[strlen(inputPath) - 1] != '\\' && inputPath[strlen(inputPath) - 1] != '/'){
-					strcat(inputPath, "\\");
+					strncat(inputPath, "\\", 1);
 				}
 			}
 		}
@@ -48,10 +48,10 @@ int main(int argc, char *argv[]){
 		if(strcmp(argv[i], "-o") == 0){
 			i++;
 			if(i < argc){
-				strcpy(outputPath, argv[i]);
+				strncpy(outputPath, argv[i], strlen(argv[i]));
 				//If it doesn't end in a backslash or forwardslash, add one!
 				if(outputPath[strlen(outputPath) - 1] != '\\' && outputPath[strlen(outputPath) - 1] != '/'){
-					strcat(outputPath, "\\");
+					strncat(outputPath, "\\", 1);
 				}
 			}
 		}
@@ -65,6 +65,10 @@ int main(int argc, char *argv[]){
 			objFlags[1] = 1;
 		}
 	}
+	
+	//Add a null terminator to the paths just in case!
+	inputPath[strlen(inputPath)] = '\0';
+	outputPath[strlen(outputPath)] = '\0';
 
 
 	DIR *fileDir;
@@ -76,13 +80,13 @@ int main(int argc, char *argv[]){
 			printf("The specified directory could not be opened, using the program's directory...\n\n");
 		}
 
-		strncpy(inputPath, ".\\", MAX_PATH_SIZE);
+		strncpy(inputPath, ".\\\0", 3);
 		fileDir = opendir(inputPath);
 	}
 	/** If an output path wasn't specified, set it to a folder called "out" within the inputPath. **/
 	if(outputPath[0] == '\0'){
-		strcpy(outputPath, inputPath);
-		strcat(outputPath, "out\\");
+		strncpy(outputPath, inputPath, strlen(inputPath));
+		strncat(outputPath, "out\\\0", 5);
 
 		printf("No output path was specified, saving files to \"%s\".\n\n", outputPath);
 	}
@@ -97,8 +101,9 @@ int main(int argc, char *argv[]){
 	while((dirFile = readdir(fileDir)) != NULL){
 		char fileName[MAX_PATH_SIZE] = "";
 		//Combine the file's directory and name to get the full path.
-		strcpy(fileName, inputPath);
-		strcat(fileName, dirFile->d_name);
+		strncpy(fileName, inputPath, strlen(inputPath));
+		strncat(fileName, dirFile->d_name, strlen(dirFile->d_name) + 1);
+		fileName[strlen(fileName)] = '\0';
 
 
 		FILE *oldFile;
@@ -183,7 +188,7 @@ void readString(char *stringBuffer, FILE *file){
 	//Set the file pointer to the position after the null terminator we just reached!
 	fseek(file, curPos + strlen(stringBuffer) + 1, SEEK_SET);
 	//Make sure the last character is a null terminator just in case!
-	stringBuffer[strlen(stringBuffer) + 1] = '\0';
+	stringBuffer[strlen(stringBuffer)] = '\0';
 }
 
 
@@ -360,8 +365,8 @@ void getVertices(vector *posVector, vector *normVector, vector *uvVector, long u
 
 void writeMtl(vector *textureNames, char *outputPath, char *fileName){
 	char mtlName[MAX_PATH_SIZE];
-	strncpy(mtlName, outputPath, strlen(outputPath) + 1);
-	strncat(mtlName, fileName, strlen(fileName) + 1);
+	strncpy(mtlName, outputPath, strlen(outputPath));
+	strncat(mtlName, fileName, strlen(fileName));
 	strncat(mtlName, "mtl\0", 4);
 	FILE *mtlFile = fopen(mtlName, "wb");
 
@@ -384,8 +389,8 @@ void writeMtl(vector *textureNames, char *outputPath, char *fileName){
 
 void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector *uvVector, vector *textureNames, char (*objFlags)[2], char *outputPath, char *fileName){
 	char objName[MAX_PATH_SIZE];
-	strncpy(objName, outputPath, strlen(outputPath) + 1);
-	strncat(objName, fileName, strlen(fileName) + 1);
+	strncpy(objName, outputPath, strlen(outputPath));
+	strncat(objName, fileName, strlen(fileName));
 	strncat(objName, "obj\0", 4);
 	FILE *objFile = fopen(objName, "wb");
 
