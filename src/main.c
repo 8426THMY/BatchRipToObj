@@ -16,7 +16,7 @@
 
 
 //Forward declare the function so we can have main at the top!
-unsigned short convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, char *fileName);
+unsigned char convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, char *fileName);
 
 
 int main(int argc, char *argv[]){
@@ -205,7 +205,7 @@ unsigned int checkSignature(FILE *file){
 	return(0);
 }
 
-unsigned short checkVersion(FILE *file){
+unsigned char checkVersion(FILE *file){
 	//I only know how to work with version 4 '.rip' files.
 	if(readULong(file) == 4){
 		printf("'.rip' version is 4!\n");
@@ -460,7 +460,7 @@ void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector 
 
 
 //Now we declare this function!
-unsigned short convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, char *fileName){
+unsigned char convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, char *fileName){
 	/** Make sure the file's signature and version number match! **/
 	if(!checkSignature(oldFile) || !checkVersion(oldFile)){
 		return(0);
