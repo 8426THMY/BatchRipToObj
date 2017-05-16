@@ -65,7 +65,7 @@ int main(int argc, char *argv[]){
 			objFlags[1] = 1;
 		}
 	}
-	
+
 	//Add a null terminator to the paths just in case!
 	inputPath[strlen(inputPath)] = '\0';
 	outputPath[strlen(outputPath)] = '\0';
@@ -242,7 +242,7 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 		//Add the vertex attribute types to our vector!
 		for(b = 0; b < numElements; b++){
 			val = readULong(file);
-			vectorAdd(typeVector, &val, LONG, 1);
+			vectorAdd(typeVector, &val, LONG_T, 1);
 		}
 
 		//Vertex position data.
@@ -280,7 +280,7 @@ void getNames(vector *nameVector, long unsigned int totalNames, FILE *file){
 		char *curName = malloc(sizeof(char) * (strlen(tempName) + 1));
 		strncpy(curName, tempName, strlen(tempName) + 1);
 
-		vectorAdd(nameVector, &tempName, CHAR, strlen(tempName) + 1);
+		vectorAdd(nameVector, &tempName, CHAR_T, strlen(tempName) + 1);
 	}
 }
 
@@ -292,7 +292,7 @@ void getFaces(vector *faceVector, long unsigned int totalFaces, FILE *file){
 		curVert[0] = readULong(file); curVert[1] = readULong(file); curVert[2] = readULong(file);
 
 		//Now add them to our vector!
-		vectorAdd(faceVector, &curVert[0], LONG, 1); vectorAdd(faceVector, &curVert[1], LONG, 1); vectorAdd(faceVector, &curVert[2], LONG, 1);
+		vectorAdd(faceVector, &curVert[0], LONG_T, 1); vectorAdd(faceVector, &curVert[1], LONG_T, 1); vectorAdd(faceVector, &curVert[2], LONG_T, 1);
 	}
 }
 
@@ -356,9 +356,9 @@ void getVertices(vector *posVector, vector *normVector, vector *uvVector, long u
 
 
 		//Add the vertex information to our respective vectors!
-		vectorAdd(posVector, &vertPos[0], FLOAT, 1);   vectorAdd(posVector, &vertPos[1], FLOAT, 1);   vectorAdd(posVector, &vertPos[2], FLOAT, 1);
-		vectorAdd(normVector, &vertNorm[0], FLOAT, 1); vectorAdd(normVector, &vertNorm[1], FLOAT, 1); vectorAdd(normVector, &vertNorm[2], FLOAT, 1);
-		vectorAdd(uvVector, &vertUV[0], FLOAT, 1);     vectorAdd(uvVector, &vertUV[1], FLOAT, 1);
+		vectorAdd(posVector, &vertPos[0], FLOAT_T, 1);   vectorAdd(posVector, &vertPos[1], FLOAT_T, 1);   vectorAdd(posVector, &vertPos[2], FLOAT_T, 1);
+		vectorAdd(normVector, &vertNorm[0], FLOAT_T, 1); vectorAdd(normVector, &vertNorm[1], FLOAT_T, 1); vectorAdd(normVector, &vertNorm[2], FLOAT_T, 1);
+		vectorAdd(uvVector, &vertUV[0], FLOAT_T, 1);     vectorAdd(uvVector, &vertUV[1], FLOAT_T, 1);
 	}
 }
 

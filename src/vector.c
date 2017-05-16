@@ -8,7 +8,7 @@ void vectorInit(vector *vec){
 	vec->data = malloc(sizeof(void *) * vec->capacity);
 }
 
-void vectorResize(vector *vec, size_t capacity){
+void vectorResize(vector *vec, const size_t capacity){
 	void **newData = realloc(vec->data, sizeof(void *) * capacity);
 
 	if(newData != NULL){
@@ -17,32 +17,32 @@ void vectorResize(vector *vec, size_t capacity){
 	}
 }
 
-void vectorAdd(vector *vec, void *data, enum type dataType, unsigned int length){
+void vectorAdd(vector *vec, void *data, const enum type dataType, const unsigned int length){
 	if(vec->size == vec->capacity){
 		vectorResize(vec, vec->capacity * 2);
 	}
 	switch(dataType){
-		case CHAR:
+		case CHAR_T:
 			vec->data[vec->size] = malloc(length * sizeof(char));
 			memcpy(vec->data[vec->size++], data, length * sizeof(char));
 		break;
-		case INT:
+		case INT_T:
 			vec->data[vec->size] = malloc(length * sizeof(int));
 			memcpy(vec->data[vec->size++], data, length * sizeof(int));
 		break;
-		case LONG:
+		case LONG_T:
 			vec->data[vec->size] = malloc(length * sizeof(long));
 			memcpy(vec->data[vec->size++], data, length * sizeof(long));
 		break;
-		case FLOAT:
+		case FLOAT_T:
 			vec->data[vec->size] = malloc(length * sizeof(float));
 			memcpy(vec->data[vec->size++], data, length * sizeof(float));
 		break;
-		case DOUBLE:
+		case DOUBLE_T:
 			vec->data[vec->size] = malloc(length * sizeof(double));
 			memcpy(vec->data[vec->size++], data, length * sizeof(double));
 		break;
-		case LONG_DOUBLE:
+		case LONG_DOUBLE_T:
 			vec->data[vec->size] = malloc(length * sizeof(long double));
 			memcpy(vec->data[vec->size++], data, length * sizeof(long double));
 		break;
@@ -53,7 +53,7 @@ void vectorAdd(vector *vec, void *data, enum type dataType, unsigned int length)
 	}
 }
 
-void vectorRemove(vector *vec, unsigned int pos){
+void vectorRemove(vector *vec, const unsigned int pos){
 	if(pos < vec->size){
 		free(vec->data[pos]);
 
@@ -70,7 +70,7 @@ void vectorRemove(vector *vec, unsigned int pos){
 	}
 }
 
-void *vectorGet(vector *vec, unsigned int pos){
+void *vectorGet(const vector *vec, const unsigned int pos){
 	if(pos < vec->size){
 		return(vec->data[pos]);
 	}
@@ -78,35 +78,35 @@ void *vectorGet(vector *vec, unsigned int pos){
 	return(NULL);
 }
 
-void vectorSet(vector *vec, unsigned int pos, void *data, enum type dataType, unsigned int length){
+void vectorSet(vector *vec, const unsigned int pos, void *data, const enum type dataType, const unsigned int length){
 	if(pos < vec->size){
 		switch(dataType){
-			case CHAR:
+			case CHAR_T:
 				free(vec->data[pos]);
 				vec->data[pos] = malloc(length * sizeof(char));
 				memcpy(vec->data[pos], data, length * sizeof(char));
 			break;
-			case INT:
+			case INT_T:
 				free(vec->data[pos]);
 				vec->data[pos] = malloc(length * sizeof(int));
 				memcpy(vec->data[pos], data, length * sizeof(int));
 			break;
-			case LONG:
+			case LONG_T:
 				free(vec->data[pos]);
 				vec->data[pos] = malloc(length * sizeof(long));
 				memcpy(vec->data[pos], data, length * sizeof(long));
 			break;
-			case FLOAT:
+			case FLOAT_T:
 				free(vec->data[pos]);
 				vec->data[pos] = malloc(length * sizeof(float));
 				memcpy(vec->data[pos], (float *)data, length * sizeof(float));
 			break;
-			case DOUBLE:
+			case DOUBLE_T:
 				free(vec->data[pos]);
 				vec->data[pos] = malloc(length * sizeof(double));
 				memcpy(vec->data[pos], (double *)data, length * sizeof(double));
 			break;
-			case LONG_DOUBLE:
+			case LONG_DOUBLE_T:
 				free(vec->data[pos]);
 				vec->data[pos] = malloc(length * sizeof(long double));
 				memcpy(vec->data[pos], (long double *)data, length * sizeof(long double));
@@ -120,7 +120,7 @@ void vectorSet(vector *vec, unsigned int pos, void *data, enum type dataType, un
 	}
 }
 
-size_t vectorSize(vector *vec){
+size_t vectorSize(const vector *vec){
 	return(vec->size);
 }
 

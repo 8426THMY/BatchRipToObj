@@ -7,13 +7,13 @@
 
 
 enum type {
-	VOID,
-	CHAR,
-	INT,
-	LONG,
-	FLOAT,
-	DOUBLE,
-	LONG_DOUBLE
+	VOID_T,
+	CHAR_T,
+	INT_T,
+	LONG_T,
+	FLOAT_T,
+	DOUBLE_T,
+	LONG_DOUBLE_T
 };
 
 typedef struct vector {
@@ -24,12 +24,12 @@ typedef struct vector {
 
 
 void vectorInit(vector *vec);
-void vectorResize(vector *vec, size_t capacity);
-void vectorAdd(vector *vec, void *data, enum type dataType, unsigned int length);
-void vectorRemove(vector *vec, unsigned int pos);
-void *vectorGet(vector *vec, unsigned int pos);
-void vectorSet(vector *vec, unsigned int pos, void *data, enum type dataType, unsigned int length);
-size_t vectorSize(vector *vec);
+void vectorResize(vector *vec, const size_t capacity);
+void vectorAdd(vector *vec, void *data, const enum type dataType, const unsigned int length);
+void vectorRemove(vector *vec, const unsigned int pos);
+void *vectorGet(const vector *vec, const unsigned int pos);
+void vectorSet(vector *vec, const unsigned int pos, void *data, const enum type dataType, const unsigned int length);
+size_t vectorSize(const vector *vec);
 void vectorClear(vector *vec);
 
 
