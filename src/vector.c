@@ -1,133 +1,49 @@
 #include "vector.h"
 
 
-void vectorInit(vector *vec){
-	vec->capacity = 1;
-	vec->size = 0;
+#include <string.h>
 
-	vec->data = malloc(sizeof(void *) * vec->capacity);
+
+void vectorInit(vector *v, const size_t elementSize){
+	v->data = malloc(elementSize);
+	v->elementSize = elementSize;
+	v->capacity = 1;
+	v->size = 0;
 }
 
-void vectorResize(vector *vec, const size_t capacity){
-	void **newData = realloc(vec->data, sizeof(void *) * capacity);
-
-	if(newData != NULL){
-		vec->data = newData;
-		vec->capacity = capacity;
+void vectorResize(vector *v, const size_t capacity){
+	void *tempData = realloc(v->data, v->elementSize * capacity);
+	if(tempData != NULL){
+		v->data = tempData;
+		v->capacity = capacity;
 	}
 }
 
-void vectorAdd(vector *vec, void *data, const enum type dataType, const unsigned int length){
-	if(vec->size == vec->capacity){
-		vectorResize(vec, vec->capacity * 2);
+void vectorAdd(vector *v, const void *data){
+	if(v->size == v->capacity){
+		vectorResize(v, v->capacity * 2);
 	}
-	switch(dataType){
-		case CHAR_T:
-			vec->data[vec->size] = malloc(length * sizeof(char));
-			memcpy(vec->data[vec->size++], data, length * sizeof(char));
-		break;
-		case INT_T:
-			vec->data[vec->size] = malloc(length * sizeof(int));
-			memcpy(vec->data[vec->size++], data, length * sizeof(int));
-		break;
-		case LONG_T:
-			vec->data[vec->size] = malloc(length * sizeof(long));
-			memcpy(vec->data[vec->size++], data, length * sizeof(long));
-		break;
-		case FLOAT_T:
-			vec->data[vec->size] = malloc(length * sizeof(float));
-			memcpy(vec->data[vec->size++], data, length * sizeof(float));
-		break;
-		case DOUBLE_T:
-			vec->data[vec->size] = malloc(length * sizeof(double));
-			memcpy(vec->data[vec->size++], data, length * sizeof(double));
-		break;
-		case LONG_DOUBLE_T:
-			vec->data[vec->size] = malloc(length * sizeof(long double));
-			memcpy(vec->data[vec->size++], data, length * sizeof(long double));
-		break;
-		default:
-			vec->data[vec->size] = malloc(length * sizeof(void*));
-			memcpy(vec->data[vec->size++], data, length * sizeof(void*));
-		break;
-	}
+	memcpy(v->data + v->size * v->elementSize, data, v->elementSize);
+	v->size++;
 }
 
-void vectorRemove(vector *vec, const unsigned int pos){
-	if(pos < vec->size){
-		free(vec->data[pos]);
-
-		unsigned int i = 0;
-		for(i = pos; i < vec->size - 1; i++){
-			vec->data[i] = vec->data[i + 1];
-		}
-
-		free(vec->data[--vec->size]);
-
-		if(vec->size > 0 && vec->size == vec->capacity / 4){
-			vectorResize(vec, vec->capacity / 2);
+void vectorRemove(vector *v, const size_t pos){
+	if(pos < v->size){
+		v->size--;
+		if(pos != v->size){
+			memmove(v->data + pos * v->elementSize, v->data + (pos + 1) * v->elementSize, (v->size - pos) * v->elementSize);
 		}
 	}
 }
 
-void *vectorGet(const vector *vec, const unsigned int pos){
-	if(pos < vec->size){
-		return(vec->data[pos]);
+void *vectorGet(const vector *v, const size_t pos){
+	if(pos < v->size){
+		return(v->data + pos * v->elementSize);
 	}
 
 	return(NULL);
 }
 
-void vectorSet(vector *vec, const unsigned int pos, void *data, const enum type dataType, const unsigned int length){
-	if(pos < vec->size){
-		switch(dataType){
-			case CHAR_T:
-				free(vec->data[pos]);
-				vec->data[pos] = malloc(length * sizeof(char));
-				memcpy(vec->data[pos], data, length * sizeof(char));
-			break;
-			case INT_T:
-				free(vec->data[pos]);
-				vec->data[pos] = malloc(length * sizeof(int));
-				memcpy(vec->data[pos], data, length * sizeof(int));
-			break;
-			case LONG_T:
-				free(vec->data[pos]);
-				vec->data[pos] = malloc(length * sizeof(long));
-				memcpy(vec->data[pos], data, length * sizeof(long));
-			break;
-			case FLOAT_T:
-				free(vec->data[pos]);
-				vec->data[pos] = malloc(length * sizeof(float));
-				memcpy(vec->data[pos], (float *)data, length * sizeof(float));
-			break;
-			case DOUBLE_T:
-				free(vec->data[pos]);
-				vec->data[pos] = malloc(length * sizeof(double));
-				memcpy(vec->data[pos], (double *)data, length * sizeof(double));
-			break;
-			case LONG_DOUBLE_T:
-				free(vec->data[pos]);
-				vec->data[pos] = malloc(length * sizeof(long double));
-				memcpy(vec->data[pos], (long double *)data, length * sizeof(long double));
-			break;
-			default:
-				free(vec->data[pos]);
-				vec->data[pos] = malloc(length * sizeof(void*));
-				memcpy(vec->data[pos], data, length * sizeof(void*));
-			break;
-		}
-	}
-}
-
-size_t vectorSize(const vector *vec){
-	return(vec->size);
-}
-
-void vectorClear(vector *vec){
-	unsigned int i;
-	for(i = 0; i < vec->size; i++){
-		free(vec->data[i]);
-	}
-	free(vec->data);
+void vectorClear(vector *v){
+	free(v->data);
 }

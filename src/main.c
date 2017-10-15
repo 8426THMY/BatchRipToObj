@@ -16,12 +16,14 @@
 
 
 //Forward declare the function so we can have main at the top!
-unsigned char convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, char *fileName);
+unsigned char convertRIP(FILE *oldFile, const char objFlags[2], char *fileName, const size_t fileNameLength);
 
 
 int main(int argc, char *argv[]){
-	char inputPath[MAX_PATH_SIZE] = "";
-	char outputPath[MAX_PATH_SIZE] = "";
+	char inputPath[MAX_PATH_SIZE];
+	size_t inputPathLength = 0;
+	char outputPath[MAX_PATH_SIZE];
+	size_t outputPathLength = 0;
 
 	/*
 		objFlags[0] = Should we ignore UVs?
@@ -30,28 +32,32 @@ int main(int argc, char *argv[]){
 	char objFlags[2] = {0};
 
 
-	unsigned int i;
+	size_t i;
 	/** Loop through the program's arguments. **/
-	for(i = 1; i < argc; i++){
+	for(i = 1; i < argc; ++i){
 		//If this argument is "-i", set the input file path to the argument that follows it.
 		if(strcmp(argv[i], "-i") == 0){
-			i++;
+			++i;
 			if(i < argc){
-				strncpy(inputPath, argv[i], strlen(argv[i]));
+				inputPathLength = strlen(argv[i]);
+				memcpy(inputPath, argv[i], inputPathLength);
 				//If it doesn't end in a backslash or forwardslash, add one!
-				if(inputPath[strlen(inputPath) - 1] != '\\' && inputPath[strlen(inputPath) - 1] != '/'){
-					strncat(inputPath, "\\", 1);
+				if(inputPath[inputPathLength - 1] != '\\' && inputPath[inputPathLength - 1] != '/'){
+					memcpy(inputPath + inputPathLength, "\\", sizeof("\\") - sizeof(char));
+					++inputPathLength;
 				}
 			}
 		}
 		//If this argument is "-o", set the output file path to the argument that follows it.
 		if(strcmp(argv[i], "-o") == 0){
-			i++;
+			++i;
 			if(i < argc){
-				strncpy(outputPath, argv[i], strlen(argv[i]));
+				outputPathLength = strlen(argv[i]);
+				memcpy(outputPath, argv[i], outputPathLength);
 				//If it doesn't end in a backslash or forwardslash, add one!
-				if(outputPath[strlen(outputPath) - 1] != '\\' && outputPath[strlen(outputPath) - 1] != '/'){
-					strncat(outputPath, "\\", 1);
+				if(outputPath[outputPathLength - 1] != '\\' && outputPath[outputPathLength - 1] != '/'){
+					memcpy(outputPath + outputPathLength, "\\", sizeof("\\") - sizeof(char));
+					++outputPathLength;
 				}
 			}
 		}
@@ -67,26 +73,29 @@ int main(int argc, char *argv[]){
 	}
 
 	//Add a null terminator to the paths just in case!
-	inputPath[strlen(inputPath)] = '\0';
-	outputPath[strlen(outputPath)] = '\0';
+	inputPath[inputPathLength] = '\0';
+	outputPath[outputPathLength] = '\0';
 
 
 	DIR *fileDir;
 	/** If the directory couldn't be opened, use the program's directory! **/
 	if((fileDir = opendir(inputPath)) == NULL || errno == ENOENT){
-		if(inputPath[0] == '\0'){
-			printf("Input directory not specified, using the program's directory...\n\n");
+		if(inputPathLength == 0){
+			fputs("Input directory not specified, using the program's directory...\n\n", stdout);
 		}else{
-			printf("The specified directory could not be opened, using the program's directory...\n\n");
+			fputs("The specified directory could not be opened, using the program's directory...\n\n", stdout);
 		}
 
-		strncpy(inputPath, ".\\\0", 3);
+		inputPathLength = sizeof(".\\") - sizeof(char);
+		memcpy(inputPath, ".\\", sizeof(".\\"));
+
 		fileDir = opendir(inputPath);
 	}
 	/** If an output path wasn't specified, set it to a folder called "out" within the inputPath. **/
-	if(outputPath[0] == '\0'){
-		strncpy(outputPath, inputPath, strlen(inputPath));
-		strncat(outputPath, "out\\\0", 5);
+	if(outputPathLength == 0){
+		outputPathLength = inputPathLength + (sizeof("out\\") - sizeof(char));
+		memcpy(outputPath, inputPath, inputPathLength);
+		memcpy(outputPath + inputPathLength, "out\\", sizeof("out\\"));
 
 		printf("No output path was specified, saving files to \"%s\".\n\n", outputPath);
 	}
@@ -97,35 +106,42 @@ int main(int argc, char *argv[]){
 	struct dirent *dirFile;
 	unsigned int successCount = 0;
 	unsigned int failCount = 0;
+
+	//No point in doing this multiple times. It's not like these paths will change.
+	char inputFileName[MAX_PATH_SIZE];
+	memcpy(inputFileName, inputPath, inputPathLength);
+	char outputFileName[MAX_PATH_SIZE];
+	memcpy(outputFileName, outputPath, outputPathLength);
+	printf("%s\n", inputPath);
+
 	/** Loop through all the files in the specified directory. **/
 	while((dirFile = readdir(fileDir)) != NULL){
-		char fileName[MAX_PATH_SIZE] = "";
 		//Combine the file's directory and name to get the full path.
-		strncpy(fileName, inputPath, strlen(inputPath));
-		strncat(fileName, dirFile->d_name, strlen(dirFile->d_name) + 1);
-		fileName[strlen(fileName)] = '\0';
+		memcpy(inputFileName + inputPathLength, dirFile->d_name, dirFile->d_namlen);
+		inputFileName[inputPathLength + dirFile->d_namlen] = '\0';
 
 
 		FILE *oldFile;
-		char *fileExtension = strrchr(dirFile->d_name, '.');
+		const char *fileExtension = strrchr(dirFile->d_name, '.');
 		/** Open the file and convert it if the extension is ".rip"! **/
-		if(fileExtension != NULL && strcmp(fileExtension, ".rip") == 0 && (oldFile = fopen(fileName, "rb")) != NULL){
-			//The new file's name should be the output path plus the original file name!
-			char newName[MAX_PATH_SIZE] = "";
-			strncpy(newName, dirFile->d_name, strlen(dirFile->d_name) - 3);
+		if(fileExtension != NULL && strcmp(fileExtension, ".rip") == 0 && (oldFile = fopen(inputFileName, "rb")) != NULL){
+			//We don't add the file extension to the end because we change it later on.
+			const size_t outputFileNameLength = outputPathLength + dirFile->d_namlen - 3;
+			memcpy(outputFileName + outputPathLength, dirFile->d_name, dirFile->d_namlen - 3);
+			outputFileName[outputFileNameLength] = '\0';
 
 
-			printf("Currently converting \"%s\"...\n", fileName);
-			if(convertRIP(oldFile, &objFlags, &outputPath[0], &newName[0])){
-				printf("Conversion successful.\n\n");
+			printf("Currently converting \"%s\"...\n", inputFileName);
+			if(convertRIP(oldFile, objFlags, outputFileName, outputFileNameLength)){
+				fputs("Conversion successful.\n\n", stdout);
 
-				successCount++;
+				++successCount;
 			}else{
-				printf("Conversion unsuccessful.\n\n");
+				fputs("Conversion unsuccessful.\n\n", stdout);
 
-				remove(newName);
+				remove(outputFileName);
 
-				failCount++;
+				++failCount;
 			}
 
 
@@ -143,46 +159,44 @@ int main(int argc, char *argv[]){
 	}
 
 
-	printf("\n\nPress enter to exit.\n");
+	fputs("\n\nPress enter to exit.\n", stdout);
 	getc(stdin);
 
 	return(1);
 }
 
 
+/** Read four bytes from the file as a little-endian signed long. **/
 long signed int readLong(FILE *file){
 	long signed int returnVal;
 
-	//Read four bytes from the file as a little-endian signed long.
 	fread((void *)&returnVal, sizeof(long signed int), 1, file);
 
-	//Now return the value!
 	return(returnVal);
 }
 
+/** Read four bytes from the file as a little-endian unsigned long. **/
 long unsigned int readULong(FILE *file){
 	long unsigned int returnVal;
 
-	//Read four bytes from the file as a little-endian unsigned long.
 	fread((void *)&returnVal, sizeof(long unsigned int), 1, file);
 
-	//Now return the value!
 	return(returnVal);
 }
 
+/** Read four bytes from the file as a little-endian float. **/
 float readFloat(FILE *file){
 	float returnVal;
 
-	//Read four bytes from the file as a little-endian float.
 	fread((void *)&returnVal, sizeof(float), 1, file);
 
-	//Now return the value!
 	return(returnVal);
 }
 
+/** Read a string from the file and store it in stringBuffer. **/
 void readString(char *stringBuffer, FILE *file){
 	//Record the current position of the file pointer.
-	long unsigned int curPos = ftell(file);
+	const long curPos = ftell(file);
 	//Add characters to stringBuffer until we reach a null terminator or the end of the file!
 	fgets(stringBuffer, 1000, file);
 	//Set the file pointer to the position after the null terminator we just reached!
@@ -192,8 +206,8 @@ void readString(char *stringBuffer, FILE *file){
 }
 
 
-unsigned int checkSignature(FILE *file){
-	//Check to see if the file's signature matches.
+/** Ensure the file's signature is correct. **/
+unsigned char checkSignature(FILE *file){
 	if(readULong(file) == 0xDEADC0DE){
 		printf("File signature is 0xDEADC0DE!\n");
 
@@ -205,20 +219,20 @@ unsigned int checkSignature(FILE *file){
 	return(0);
 }
 
+/** Ensure the file's version is correct. **/
 unsigned char checkVersion(FILE *file){
-	//I only know how to work with version 4 '.rip' files.
 	if(readULong(file) == 4){
-		printf("'.rip' version is 4!\n");
+		fputs("'.rip' version is 4!\n", stdout);
 
 		return(1);
 	}
 
 
-	printf("'.rip' version isn't 4, aborting...\n");
+	fputs("'.rip' version isn't 4, aborting...\n", stdout);
 	return(0);
 }
 
-void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsigned int *normIndex, long unsigned int *uvIndex, long unsigned int numAttribs, FILE *file){
+void getVertexAttribs(vector *typeVector, size_t *posIndex, size_t *normIndex, size_t *uvIndex, const size_t numAttribs, FILE *file){
 	//We only keep information for one of each different vertex attribute... for now!
 	char gotEmPos  = 0;
 	char gotEmNorm = 0;
@@ -226,27 +240,27 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 	char curAttrib[1000];
 
 
-	long unsigned int a;
+	size_t a;
+	size_t b;
 	/** Loop through the vertex attribute information! **/
-	for(a = 0; a < numAttribs; a++){
-		readString(&curAttrib[0], file);
+	for(a = 0; a < numAttribs; ++a){
+		readString(curAttrib, file);
 
-		readULong(file); // Skip attribute index as it is currently unused
-		long unsigned int attribOffset = readULong(file);
-		readULong(file); // Skip attribute size as it is currently unused
-		long unsigned int numElements  = readULong(file);
+		readULong(file); //Skip attribute index as it is currently unused
+		size_t attribOffset = readULong(file);
+		readULong(file); //Skip attribute size as it is currently unused
+		size_t numElements  = readULong(file);
 
 
 		unsigned long val;
-		long unsigned int b;
 		//Add the vertex attribute types to our vector!
-		for(b = 0; b < numElements; b++){
+		for(b = 0; b < numElements; ++b){
 			val = readULong(file);
-			vectorAdd(typeVector, &val, LONG_T, 1);
+			vectorAdd(typeVector, &val);
 		}
 
 		//Vertex position data.
-		if(strcmp(&curAttrib[0], "POSITION") == 0 && gotEmPos == 0){
+		if(strcmp(curAttrib, "POSITION") == 0 && gotEmPos == 0){
 			posIndex[0] = attribOffset / 4;
 			posIndex[1] = posIndex[0] + 1;
 			posIndex[2] = posIndex[0] + 2;
@@ -254,7 +268,7 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 			gotEmPos = 1;
 
 		//Vertex normal data.
-		}else if(strcmp(&curAttrib[0], "NORMAL") == 0 && gotEmNorm == 0){
+		}else if(strcmp(curAttrib, "NORMAL") == 0 && gotEmNorm == 0){
 			normIndex[0] = attribOffset / 4;
 			normIndex[1] = normIndex[0] + 1;
 			normIndex[2] = normIndex[0] + 2;
@@ -262,7 +276,7 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
 			gotEmNorm = 1;
 
 		//Vertex UV data.
-		}else if(strcmp(&curAttrib[0], "TEXCOORD") == 0 && gotEmUV == 0){
+		}else if(strcmp(curAttrib, "TEXCOORD") == 0 && gotEmUV == 0){
 			uvIndex[0] = attribOffset / 4;
 			uvIndex[1] = uvIndex[0] + 1;
 
@@ -271,51 +285,57 @@ void getVertexAttribs(vector *typeVector, long unsigned int *posIndex, long unsi
     }
 }
 
-void getNames(vector *nameVector, long unsigned int totalNames, FILE *file){
+void getNames(vector *nameVector, const size_t totalNames, FILE *file){
 	char tempName[MAX_PATH_SIZE];
-	long unsigned int i;
+	size_t i;
 	//Push the names into our vector!
 	for(i = 0; i < totalNames; i++){
-		readString(&tempName[0], file);
-		char *curName = malloc(sizeof(char) * (strlen(tempName) + 1));
-		strncpy(curName, tempName, strlen(tempName) + 1);
+		readString(tempName, file);
 
-		vectorAdd(nameVector, &tempName, CHAR_T, strlen(tempName) + 1);
+		const size_t tempNameLength = strlen(tempName);
+		char *curName = malloc((tempNameLength + 1) * sizeof(char));
+		memcpy(curName, tempName, tempNameLength);
+		curName[tempNameLength] = '\0';
+
+		vectorAdd(nameVector, &curName);
 	}
 }
 
-void getFaces(vector *faceVector, long unsigned int totalFaces, FILE *file){
-	long unsigned int i;
-	for(i = 0; i < totalFaces; i++){
-		long unsigned int curVert[3] = {0};
+void getFaces(vector *faceVector, const size_t totalFaces, FILE *file){
+	size_t i;
+	for(i = 0; i < totalFaces; ++i){
+		size_t curVert[3] = {0};
 		//Store the indices for the current vertex.
 		curVert[0] = readULong(file); curVert[1] = readULong(file); curVert[2] = readULong(file);
 
 		//Now add them to our vector!
-		vectorAdd(faceVector, &curVert[0], LONG_T, 1); vectorAdd(faceVector, &curVert[1], LONG_T, 1); vectorAdd(faceVector, &curVert[2], LONG_T, 1);
+		vectorAdd(faceVector, &curVert[0]); vectorAdd(faceVector, &curVert[1]); vectorAdd(faceVector, &curVert[2]);
 	}
 }
 
-void getVertices(vector *posVector, vector *normVector, vector *uvVector, long unsigned int totalVerts, vector *attribTypes, long unsigned int *posIndex, long unsigned int *normIndex, long unsigned int *uvIndex, FILE *file){
+void getVertices(vector *posVector, vector *normVector, vector *uvVector,
+                 const size_t totalVerts, const vector *attribTypes,
+                 const size_t *posIndex, const size_t *normIndex, const size_t *uvIndex, FILE *file){
+
 	long unsigned int a;
+	long unsigned int b;
 	//Loop through all the vertices!
-	for(a = 0; a < totalVerts; a++){
+	for(a = 0; a < totalVerts; ++a){
 		float vertPos[3]  = {0};
 		float vertNorm[3] = {0};
 		float vertUV[2]   = {0};
 
-		long unsigned int b;
 		//Loop through all our vertex attributes!
-		for(b = 0; b < vectorSize(attribTypes); b++){
-			float curVal = 0.0f;
+		for(b = 0; b < attribTypes->size; ++b){
+			float curVal = 0.f;
 			/*
-				The data type depends on what we've stored in attribTypes:
+			The data type depends on what we've stored in attribTypes:
 
-				0 = float
-				1 = long unsigned int
-				2 = long signed int
+			0 = float
+			1 = long unsigned int
+			2 = long signed int
 			*/
-			switch(*(long unsigned int *)vectorGet(attribTypes, b)){
+			switch(*((long unsigned int *)vectorGet(attribTypes, b))){
 				case 0:
 					curVal = readFloat(file);
 				break;
@@ -356,29 +376,26 @@ void getVertices(vector *posVector, vector *normVector, vector *uvVector, long u
 
 
 		//Add the vertex information to our respective vectors!
-		vectorAdd(posVector, &vertPos[0], FLOAT_T, 1);   vectorAdd(posVector, &vertPos[1], FLOAT_T, 1);   vectorAdd(posVector, &vertPos[2], FLOAT_T, 1);
-		vectorAdd(normVector, &vertNorm[0], FLOAT_T, 1); vectorAdd(normVector, &vertNorm[1], FLOAT_T, 1); vectorAdd(normVector, &vertNorm[2], FLOAT_T, 1);
-		vectorAdd(uvVector, &vertUV[0], FLOAT_T, 1);     vectorAdd(uvVector, &vertUV[1], FLOAT_T, 1);
+		vectorAdd(posVector, &vertPos[0]);   vectorAdd(posVector, &vertPos[1]);   vectorAdd(posVector, &vertPos[2]);
+		vectorAdd(normVector, &vertNorm[0]); vectorAdd(normVector, &vertNorm[1]); vectorAdd(normVector, &vertNorm[2]);
+		vectorAdd(uvVector, &vertUV[0]);     vectorAdd(uvVector, &vertUV[1]);
 	}
 }
 
 
-void writeMtl(vector *textureNames, char *outputPath, char *fileName){
-	char mtlName[MAX_PATH_SIZE];
-	strncpy(mtlName, outputPath, strlen(outputPath));
-	strncat(mtlName, fileName, strlen(fileName));
-	strncat(mtlName, "mtl\0", 4);
-	FILE *mtlFile = fopen(mtlName, "wb");
+void writeMtl(vector *textureNames, char *fileName, const size_t fileNameLength){
+	memcpy(fileName + fileNameLength, "mtl", sizeof("mtl"));
+	FILE *mtlFile = fopen(fileName, "wb");
 
 
-	long unsigned int i;
+	size_t i;
 	//Create a very basic entry for each texture and write it to the file!
-	for(i = 0; i < vectorSize(textureNames); i++){
-		char *curName = (char *)vectorGet(textureNames, i);
+	for(i = 0; i < textureNames->size; ++i){
+		const char *curName = *((char **)vectorGet(textureNames, i));
 		fprintf(mtlFile, "newmtl %s\r\nmap_Kd %s", curName, curName);
 
 		//We don't want to have a blank line at the end of the file.
-		if(i < vectorSize(textureNames) - 1){
+		if(i < textureNames->size - 1){
 			fwrite("\r\n", sizeof(char), sizeof("\r\n") - sizeof(char), mtlFile);
 		}
 	}
@@ -387,69 +404,68 @@ void writeMtl(vector *textureNames, char *outputPath, char *fileName){
 	fclose(mtlFile);
 }
 
-void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector *uvVector, vector *textureNames, char (*objFlags)[2], char *outputPath, char *fileName){
-	char objName[MAX_PATH_SIZE];
-	strncpy(objName, outputPath, strlen(outputPath));
-	strncat(objName, fileName, strlen(fileName));
-	strncat(objName, "obj\0", 4);
-	FILE *objFile = fopen(objName, "wb");
+void writeObj(const vector *faceVector, const vector *posVector, const vector *normVector, const vector *uvVector,
+              vector *textureNames, const char objFlags[2], char *fileName, const size_t fileNameLength){
+
+	memcpy(fileName + fileNameLength, "obj", sizeof("obj"));
+	FILE *objFile = fopen(fileName, "wb");
 
 
 	/** Write '.mtl' File **/
 	//If we're not ignoring UVs and the model uses atleast one texture, create a '.mtl' file!
-	if(vectorSize(textureNames) > 0 && !(*objFlags)[0]){
-		fprintf(objFile, "mtllib %smtl\r\n", fileName);
-
-		writeMtl(textureNames, outputPath, fileName);
+	if(textureNames->size > 0 && !objFlags[0]){
+		writeMtl(textureNames, fileName, fileNameLength);
+		//"fileName" is modified to represent the material's file name.
+		fprintf(objFile, "mtllib %s\r\n", fileName);
 
 		//We only use the first texture... for now!
-		fprintf(objFile, "usemtl %s\r\n", (char *)vectorGet(textureNames, 0));
+		fprintf(objFile, "usemtl %s\r\n", *((char **)vectorGet(textureNames, 0)));
 	}
 
 
-	long unsigned int a;
+	size_t a;
 	//Write the vertex positions to the file!
-	for(a = 0; a < vectorSize(posVector) / 3; a++){
+	for(a = 0; a < posVector->size / 3; ++a){
 		//Then write it to the file!
-		fprintf(objFile, "v %f %f %f\r\n", *(float *)vectorGet(posVector, a * 3), *(float *)vectorGet(posVector, a * 3 + 1), *(float *)vectorGet(posVector, a * 3 + 2));
+		fprintf(objFile, "v %f %f %f\r\n", *((float *)vectorGet(posVector, a * 3)), *((float *)vectorGet(posVector, a * 3 + 1)), *((float *)vectorGet(posVector, a * 3 + 2)));
 	}
 
 	//Write the vertex UV coordinates to the file if we're not ignoring them!
-	if(!(*objFlags)[0]){
-		for(a = 0; a < vectorSize(uvVector) / 2; a++){
-			fprintf(objFile, "vt %f %f\r\n", *(float *)vectorGet(uvVector, a * 2), *(float *)vectorGet(uvVector, a * 2 + 1));
+	if(!objFlags[0]){
+		for(a = 0; a < uvVector->size / 2; ++a){
+			fprintf(objFile, "vt %f %f\r\n", *((float *)vectorGet(uvVector, a * 2)), *((float *)vectorGet(uvVector, a * 2 + 1)));
 		}
 	}
 
 	//Write the vertex normals to the file if we're not ignoring them!
-	if(!(*objFlags)[1]){
-		for(a = 0; a < vectorSize(normVector) / 3; a++){
-			fprintf(objFile, "vn %f %f %f\r\n", *(float *)vectorGet(normVector, a * 3), *(float *)vectorGet(normVector, a * 3 + 1), *(float *)vectorGet(normVector, a * 3 + 2));
+	if(!objFlags[1]){
+		for(a = 0; a < normVector->size / 3; ++a){
+			fprintf(objFile, "vn %f %f %f\r\n", *((float *)vectorGet(normVector, a * 3)), *((float *)vectorGet(normVector, a * 3 + 1)), *((float *)vectorGet(normVector, a * 3 + 2)));
 		}
 	}
 
 
+	size_t b;
 	//Write the faces to the file!
-	for(a = 0; a < vectorSize(faceVector) / 3; a++){
+	for(a = 0; a < faceVector->size / 3; ++a){
 		fwrite("f", sizeof(char), sizeof("f") - sizeof(char), objFile);
 
-		long unsigned int b;
-		for(b = 0; b < 3; b++){
+		for(b = 0; b < 3; ++b){
 			//Write the position's indices to the file!
-			fprintf(objFile, " %ld/", *(long unsigned int *)vectorGet(faceVector, a * 3 + b) + 1);
+			fprintf(objFile, " %ld/", *((long unsigned int *)vectorGet(faceVector, a * 3 + b)) + 1);
 
 			//If we're not ignoring UVs, write their indices to the file!
-			if(!(*objFlags)[0]){
-				fprintf(objFile, "%ld", *(long unsigned int *)vectorGet(faceVector, a * 3 + b) + 1);
+			if(!objFlags[0]){
+				fprintf(objFile, "%ld", *((long unsigned int *)vectorGet(faceVector, a * 3 + b)) + 1);
 			}
 			//If we're not ignoring normals, write their indices to the file!
-			if(!(*objFlags)[1]){
-				fprintf(objFile, "/%ld", *(long unsigned int *)vectorGet(faceVector, a * 3 + b) + 1);
+			if(!objFlags[1]){
+				fprintf(objFile, "/%ld", *((long unsigned int *)vectorGet(faceVector, a * 3 + b)) + 1);
 			}
 		}
 
 		//We don't want to have a blank line at the end of the file.
-		if(a < vectorSize(faceVector) / 3 - 1){
+		if(a < faceVector->size / 3 - 1){
 			fwrite("\r\n", sizeof(char), sizeof("\r\n") - sizeof(char), objFile);
 		}
 	}
@@ -460,7 +476,7 @@ void writeObj(vector *faceVector, vector *posVector, vector *normVector, vector 
 
 
 //Now we declare this function!
-unsigned char convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, char *fileName){
+unsigned char convertRIP(FILE *oldFile, const char objFlags[2], char *fileName, const size_t fileNameLength){
 	/** Make sure the file's signature and version number match! **/
 	if(!checkSignature(oldFile) || !checkVersion(oldFile)){
 		return(0);
@@ -468,32 +484,32 @@ unsigned char convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, c
 
 
 	//Good thing we understand how '.rip' files work, right?
-	//...right?
-	long unsigned int totalFaces    = readULong(oldFile);
-    long unsigned int totalVerts    = readULong(oldFile);
-    readULong(oldFile); // Skip vertex size as it is currently unused.
-    long unsigned int totalTextures = readULong(oldFile);
-    long unsigned int totalShaders  = readULong(oldFile);
-    long unsigned int totalAttribs  = readULong(oldFile);
+	//... right?
+	const size_t totalFaces    = readULong(oldFile);
+    const size_t totalVerts    = readULong(oldFile);
+    readULong(oldFile); //Skip vertex size as it is currently unused.
+    const size_t totalTextures = readULong(oldFile);
+    const size_t totalShaders  = readULong(oldFile);
+    const size_t totalAttribs  = readULong(oldFile);
 
 
 	/** Vertex Attributes **/
 	//Contains the data types for the different vertex attributes.
 	vector attribTypes;
-	vectorInit(&attribTypes);
+	vectorInit(&attribTypes, sizeof(long unsigned int));
 
-	long unsigned int posIndex[3]  = {0};
-	long unsigned int normIndex[3] = {0};
-	long unsigned int uvIndex[2]   = {0};
+	size_t posIndex[3]  = {0};
+	size_t normIndex[3] = {0};
+	size_t uvIndex[2]   = {0};
 
 	//Get the information for out vertex attributes!
-	getVertexAttribs(&attribTypes, &posIndex[0], &normIndex[0], &uvIndex[0], totalAttribs, oldFile);
+	getVertexAttribs(&attribTypes, posIndex, normIndex, uvIndex, totalAttribs, oldFile);
 
 
 	/** Texture Names **/
 	//Contains the names of each texture that the model uses!
 	vector textureNames;
-	vectorInit(&textureNames);
+	vectorInit(&textureNames, sizeof(char *));
 
 	//Now find and store 'em!
 	getNames(&textureNames, totalTextures, oldFile);
@@ -502,7 +518,7 @@ unsigned char convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, c
 	/** Shader Names - Currently Unused **/
 	//Contains the names of each shader that the model uses!
 	vector shaderNames;
-	vectorInit(&shaderNames);
+	vectorInit(&shaderNames, sizeof(char *));
 
 	//Now find and store 'em!
 	getNames(&shaderNames, totalShaders, oldFile);
@@ -511,7 +527,7 @@ unsigned char convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, c
 	/** Face Information **/
 	//Contains the ordered indices for the vertices of each face!
 	vector faceVector;
-	vectorInit(&faceVector);
+	vectorInit(&faceVector, sizeof(long unsigned int));
 
 	//Now, you guessed it, find and store 'em!
 	getFaces(&faceVector, totalFaces, oldFile);
@@ -520,30 +536,40 @@ unsigned char convertRIP(FILE *oldFile, char (*objFlags)[2], char *outputPath, c
 	/** Vertex Information **/
 	//Contains the position for each vertex!
 	vector posVector;
-	vectorInit(&posVector);
+	vectorInit(&posVector, sizeof(float));
 	//Contains the normals for each vertex!
 	vector normVector;
-	vectorInit(&normVector);
+	vectorInit(&normVector, sizeof(float));
 	//Contains the UV coordinates for each vertex!
 	vector uvVector;
-	vectorInit(&uvVector);
+	vectorInit(&uvVector, sizeof(float));
 
 	//Load the vertex information!
-	getVertices(&posVector, &normVector, &uvVector, totalVerts, &attribTypes, &posIndex[0], &normIndex[0], &uvIndex[0], oldFile);
+	getVertices(&posVector, &normVector, &uvVector, totalVerts, &attribTypes, posIndex, normIndex, uvIndex, oldFile);
 
 
 	/** Write '.obj' File **/
-	writeObj(&faceVector, &posVector, &normVector, &uvVector, &textureNames, objFlags, outputPath, fileName);
+	writeObj(&faceVector, &posVector, &normVector, &uvVector, &textureNames, objFlags, fileName, fileNameLength);
 
 
 	//Free the memory held by our vectors!
 	vectorClear(&attribTypes);
-	vectorClear(&textureNames);
-	vectorClear(&shaderNames);
 	vectorClear(&faceVector);
 	vectorClear(&posVector);
 	vectorClear(&normVector);
 	vectorClear(&uvVector);
+
+	size_t i;
+	//We need to free the data held by our strings manually.
+	for(i = 0; i < textureNames.size; ++i){
+		free(*((char **)vectorGet(&textureNames, i)));
+	}
+	vectorClear(&textureNames);
+
+	for(i = 0; i < shaderNames.size; ++i){
+		free(*((char **)vectorGet(&shaderNames, i)));
+	}
+	vectorClear(&shaderNames);
 
 
 	return(1);
