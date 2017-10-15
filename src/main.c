@@ -112,7 +112,6 @@ int main(int argc, char *argv[]){
 	memcpy(inputFileName, inputPath, inputPathLength);
 	char outputFileName[MAX_PATH_SIZE];
 	memcpy(outputFileName, outputPath, outputPathLength);
-	printf("%s\n", inputPath);
 
 	/** Loop through all the files in the specified directory. **/
 	while((dirFile = readdir(fileDir)) != NULL){
