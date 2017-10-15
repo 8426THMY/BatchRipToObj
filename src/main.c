@@ -1,8 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
 #include <errno.h>
-#include <stdlib.h>
 
 #include "vector.h"
 
@@ -289,7 +289,7 @@ void getNames(vector *nameVector, const size_t totalNames, FILE *file){
 	char tempName[MAX_PATH_SIZE];
 	size_t i;
 	//Push the names into our vector!
-	for(i = 0; i < totalNames; i++){
+	for(i = 0; i < totalNames; ++i){
 		readString(tempName, file);
 
 		const size_t tempNameLength = strlen(tempName);
