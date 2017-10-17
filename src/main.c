@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
 				memcpy(inputPath, argv[i], inputPathLength);
 				//If it doesn't end in a backslash or forwardslash, add one!
 				if(inputPath[inputPathLength - 1] != '\\' && inputPath[inputPathLength - 1] != '/'){
-					memcpy(inputPath + inputPathLength, "\\", sizeof("\\") - sizeof(char));
+					memcpy(inputPath + inputPathLength, "\\", 2);
 					++inputPathLength;
 				}
 			}
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]){
 				memcpy(outputPath, argv[i], outputPathLength);
 				//If it doesn't end in a backslash or forwardslash, add one!
 				if(outputPath[outputPathLength - 1] != '\\' && outputPath[outputPathLength - 1] != '/'){
-					memcpy(outputPath + outputPathLength, "\\", sizeof("\\") - sizeof(char));
+					memcpy(outputPath + outputPathLength, "\\", 2);
 					++outputPathLength;
 				}
 			}
@@ -86,16 +86,16 @@ int main(int argc, char *argv[]){
 			fputs("The specified directory could not be opened, using the program's directory...\n\n", stdout);
 		}
 
-		inputPathLength = sizeof(".\\") - sizeof(char);
-		memcpy(inputPath, ".\\", sizeof(".\\"));
+		inputPathLength = 2;
+		memcpy(inputPath, ".\\", 2 + 1);
 
 		fileDir = opendir(inputPath);
 	}
 	/** If an output path wasn't specified, set it to a folder called "out" within the inputPath. **/
 	if(outputPathLength == 0){
-		outputPathLength = inputPathLength + (sizeof("out\\") - sizeof(char));
+		outputPathLength = inputPathLength + 4;
 		memcpy(outputPath, inputPath, inputPathLength);
-		memcpy(outputPath + inputPathLength, "out\\", sizeof("out\\"));
+		memcpy(outputPath + inputPathLength, "out\\", 4 + 1);
 
 		printf("No output path was specified, saving files to \"%s\".\n\n", outputPath);
 	}
